@@ -344,6 +344,7 @@ function insertDataToDatabase($channelsData, $db, $sourceUrl, $replaceFlag = tru
                 && preg_match('/节目|節目/u', $title[0])) {
                 continue; // 跳过后续处理
             }
+            
             // 生成 epg_diyp 数据内容
             $diypContent = json_encode([
                 'channel_name' => $channelName,
@@ -352,24 +353,26 @@ function insertDataToDatabase($channelsData, $db, $sourceUrl, $replaceFlag = tru
                 'source' => $sourceUrl,
                 'epg_data' => $diypProgrammes
             ], JSON_UNESCAPED_UNICODE);
+
             // 当天及未来数据覆盖，其他日期数据忽略
             $action = $date >= date('Y-m-d') && $replaceFlag ? 'REPLACE' : 'IGNORE';
-            // 检测数据库类型
-            $is_sqlite = $Config['db_type'] === 'sqlite';
-            // 选择 SQL 语句
-            $sql = $is_sqlite
-                ? "INSERT OR $action INTO epg_data (date, channel, epg_diyp) VALUES (:date, :channel, :epg_diyp)"
-                : ($date >= date('Y-m-d')
+
+            // 根据数据库类型选择 SQL 语句
+            if ($Config['db_type'] === 'sqlite') {
+                $sql = "INSERT OR $action INTO epg_data (date, channel, epg_diyp) VALUES (:date, :channel, :epg_diyp)";
+            } else {
+                $sql = ($action === 'REPLACE')
                     ? "REPLACE INTO epg_data (date, channel, epg_diyp) VALUES (:date, :channel, :epg_diyp)"
-                    : "INSERT IGNORE INTO epg_data (date, channel, epg_diyp) VALUES (:date, :channel, :epg_diyp)"
-                );
+                    : "INSERT IGNORE INTO epg_data (date, channel, epg_diyp) VALUES (:date, :channel, :epg_diyp)";
+            }
+
             // 准备并执行 SQL 语句
             $stmt = $db->prepare($sql);
             $stmt->bindValue(':date', $date, PDO::PARAM_STR);
             $stmt->bindValue(':channel', $channelName, PDO::PARAM_STR);
             $stmt->bindValue(':epg_diyp', $diypContent, PDO::PARAM_STR);
             $stmt->execute();
-            if ($action == 'REPLACE' || $stmt->rowCount() > 0){
+            if ($stmt->rowCount() > 0) {
                 $recordKey = $channelName . '-' . $date;
                 $processedRecords[$recordKey] = true;
             }

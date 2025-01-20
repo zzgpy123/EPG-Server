@@ -444,7 +444,7 @@ try {
                     if (!array_filter($urls, function($url) use ($fileRltPath) {
                         $url = trim(explode('#', ltrim($url, '# '))[0]); // 处理注释
                         $urlmd5 = md5(urlencode($url)); // 计算 md5
-                        return stripos($fileRltPath, $url) !== false || stripos($fileRltPath, $urlmd5) !== false;
+                        return $url && (stripos($fileRltPath, $url) !== false || stripos($fileRltPath, $urlmd5) !== false);
                     })) {
                         if (@unlink($liveFileDir . $file)) { // 如果没有匹配的 URL，删除文件
                             $deletedCount++;

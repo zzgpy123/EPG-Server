@@ -68,8 +68,10 @@ function getFormatTime($time, $overwrite_time_zone) {
     if (empty($time)) return ['', ''];
     $time = $overwrite_time_zone ? substr($time, 0, -5) . $overwrite_time_zone : $time;
     $time = str_replace(' ', '', $time);
-    $date = DateTime::createFromFormat('YmdHisO', $time)->setTimezone(new DateTimeZone('+0800'));
-    return [$date->format('Y-m-d'), $date->format('H:i')];
+    $datetime = DateTime::createFromFormat('YmdHisO', $time);
+    if (!$datetime) return [null, null];
+    $datetime->setTimezone(new DateTimeZone('+0800'));
+    return [$datetime->format('Y-m-d'), $datetime->format('H:i')];
 }
 
 // 辅助函数：将日期和时间格式化为 XMLTV 格式
@@ -238,14 +240,14 @@ function processXmlData($xml_url, $xml_data, $db, $gen_list) {
     while ($reader->name === 'programme') {
         $programme = new SimpleXMLElement($reader->readOuterXML());
         [$startDate, $startTime] = getFormatTime((string)$programme['start'], $overwrite_time_zone);
+        [$endDate, $endTime] = getFormatTime((string)$programme['stop'], $overwrite_time_zone);
 
         // 判断数据是否符合设定期限
-        if (empty($startDate) || $startDate < $thresholdDate) {
+        if (empty($startDate) || $startDate < $thresholdDate || empty($endDate)) {
             $reader->next('programme');
             continue;
         }
 
-        [$endDate, $endTime] = getFormatTime((string)$programme['stop'], $overwrite_time_zone);
         $channelId = (string)$programme['channel'];
         $channelName = $channelNamesMap[$channelId] ?? null;
         $recordKey = $channelName . '-' . $startDate;
