@@ -22,7 +22,7 @@ if (substr_count($requestUrl, '?') > 1) {
 }
 
 // 解析 URL 中的查询参数
-parse_str(parse_url($requestUrl, PHP_URL_QUERY), $query_params);
+parse_str(str_replace('+', '%2B', parse_url($requestUrl, PHP_URL_QUERY)), $query_params);
 
 // 获取 URL 中的 token 参数并验证
 $tokenRange = $Config['token_range'] ?? 1;
