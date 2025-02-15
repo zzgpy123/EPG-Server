@@ -431,7 +431,7 @@ function doParseSourceInfo($urlLine = null) {
         $url = trim($url);
     
         // 获取 URL 内容
-        $urlContent = (stripos($url, '/data/live/file/') !== false) 
+        $urlContent = (stripos($url, '/data/live/file/') === 0) 
             ? @file_get_contents(__DIR__ . $url) 
             : downloadData($url, 5);
         $fileName = md5(urlencode($url));  // 用 MD5 对 URL 进行命名
@@ -496,7 +496,7 @@ function doParseSourceInfo($urlLine = null) {
                 $urlContentLine = trim($urlContentLine);
                 $parts = explode(',', $urlContentLine);
             
-                if (count($parts) == 2) {
+                if (count($parts) >= 2) {
                     if ($parts[1] === '#genre#') {
                         $groupTitle = trim($parts[0]); // 更新 group-title
                         continue;
