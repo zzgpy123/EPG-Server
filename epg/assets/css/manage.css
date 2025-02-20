@@ -369,6 +369,15 @@ input[type="text"] {
     user-select: none;
 }
 
+.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: white;
+}
+input[type="checkbox"] {
+    vertical-align: middle;
+}
+
 /* 主题切换按钮 */
 .checkbox {
     opacity: 0;

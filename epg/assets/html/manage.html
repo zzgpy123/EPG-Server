@@ -168,6 +168,7 @@
             支持 .txt 和 .m3u 格式，光标离开后自动保存<br>
             地址前 # 临时停用，后 # 备注并作为分组前缀，快捷键：Ctrl+/<br>
             示例：https://xxx.xx/xx.m3u #前缀1:<br>
+            在生成 m3u 文件时，「台标地址」、「tvg-id」、「tvg-name」字段可选<br>
             转换直播源：<?php echo $serverUrl . '/?token=' . $Config['token']; ?>&live=txt/m3u&url=xxx<br>
             可添加 &latest=1 获取最新文件，不读取缓存<br>
             同步：更新数据时，同步更新直播源数据，默认关闭<br>
@@ -175,7 +176,9 @@
             清理：删除服务器中未出现在列表中的直播源文件缓存<br>
             停用：停用后不会出现在生成的直播源文件中，包括单个直播源<br>
             保持：直播地址不变时，重新解析保持修改不变<br>
-            模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准，可首行添加「$精确匹配, 关闭备注」
+            模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准<br>
+            模糊匹配：默认开启，选「否」进行精准匹配<br>
+            路线备注：默认关闭，选「是」在直播地址后添加「$分组」，<br>
             
             <h3 style="line-height: 0.5;">其他设置</h3>
             数据保存天数：清理超过设定天数的数据，包括节目单、定时日志、更新日志<br>
@@ -361,7 +364,7 @@
             <input type="file" name="liveSourceFile" id="liveSourceFile" style="display: none;" accept=".m3u, .txt">
             <button id="uploadSourceBtn" onclick="document.getElementById('liveSourceFile').click()">上传源</button>
             <button id="parseSourceInfoBtn" onclick="parseSourceInfo()">解析源</button>
-            <button onclick="showLiveInfo(`<?php echo $Config['token']; ?>`, `<?php echo $serverUrl; ?>`)">访问地址</button>
+            <button onclick="showLiveUrl(`<?php echo $Config['token']; ?>`, `<?php echo $serverUrl; ?>`)">访问地址</button>
             <button id="toggleLiveSourceSyncBtn" onclick="toggleStatus('toggleLiveSourceSyncBtn')">
                 同步: <?php echo (isset($Config['live_source_auto_sync']) && $Config['live_source_auto_sync'] == 1 ? '是' : '否'); ?>
             </button>
@@ -377,15 +380,27 @@
         <!-- 表格显示解析结果 -->
         <div class="table-container" id="live-source-table-container">
             <table id="liveSourceTable">
-                <thead style="position: sticky; top: 0; background-color: white;">
+                <thead class="sticky-header">
                     <tr>
                         <th style='width: 33px'>序号</th>
                         <th style='width: 10%'>分组</th>
                         <th style='width: 10%'>频道名</th>
                         <th>直播地址</th>
-                        <th style='width: 20%'>台标地址</th>
-                        <th style='width: 8%'>tvg-id</th>
-                        <th style='width: 10%'>tvg-name</th>
+                        <th style='width: 20%'>台标地址<input type="checkbox" id="live_tvg_logo_enable" 
+                            value="<?php echo isset($Config['live_tvg_logo_enable']) ? $Config['live_tvg_logo_enable'] : 1; ?>" 
+                            <?php echo (!isset($Config['live_tvg_logo_enable']) || $Config['live_tvg_logo_enable'] == 1) ? 'checked' : ''; ?>
+                            onchange="this.value = this.checked ? 1 : 0;">
+                        </th>
+                        <th style='width: 8%'>tvg-id<input type="checkbox" id="live_tvg_id_enable" 
+                            value="<?php echo isset($Config['live_tvg_id_enable']) ? $Config['live_tvg_id_enable'] : 1; ?>" 
+                            <?php echo (!isset($Config['live_tvg_id_enable']) || $Config['live_tvg_id_enable'] == 1) ? 'checked' : ''; ?>
+                            onchange="this.value = this.checked ? 1 : 0;">
+                        </th>
+                        <th style='width: 12%'>tvg-name<input type="checkbox" id="live_tvg_name_enable" 
+                            value="<?php echo isset($Config['live_tvg_name_enable']) ? $Config['live_tvg_name_enable'] : 1; ?>" 
+                            <?php echo (!isset($Config['live_tvg_name_enable']) || $Config['live_tvg_name_enable'] == 1) ? 'checked' : ''; ?>
+                            onchange="this.value = this.checked ? 1 : 0;">
+                        </th>
                         <th style='width: 30px'>停用</th>
                         <th style='width: 30px'>保持</th>
                     </tr>
@@ -408,8 +423,33 @@
     <div class="modal-content live-template-modal-content">
         <span class="close">&times;</span>
         <h2>直播源模板<span style="font-size: 14px;">（生成直播源文件时仅包含以下数据）</span></h2>
-        <textarea id="liveTemplateTextarea" placeholder="#分组1&#10;频道1, 频道2&#10;&#10;#分组2&#10;频道3, 频道4&#10;频道5, 频道6&#10;&#10;..."
-            style="width: 100%; height: 397px;"></textarea><br><br>
+        <textarea id="liveTemplateTextarea" placeholder="#分组1&#10;频道1, 频道2&#10;频道3, 频道4&#10;&#10;#分组2&#10;&#10;#分组3, 来源1, 来源2&#10;&#10;..."
+            style="width: 100%; height: 350px;"></textarea><br>
+        <div class="row" style="margin-top: 15px; margin-bottom: 15px;">
+            <div class="column">
+                <label for="live_template_enable">启用模板：</label>
+                <select id="live_template_enable" name="live_template_enable" required>
+                    <option value="1" <?php if (!isset($Config['live_template_enable']) || $Config['live_template_enable'] == 1) echo 'selected'; ?>>是</option>
+                    <option value="0" <?php if (isset($Config['live_template_enable']) && $Config['live_template_enable'] == 0) echo 'selected'; ?>>否</option>
+                </select>
+            </div>
+            <div class="column">
+                <label for="live_fuzzy_match">模糊匹配：</label>
+                <select id="live_fuzzy_match" name="live_fuzzy_match" required>
+                    <option value="1" <?php if (!isset($Config['live_fuzzy_match']) || $Config['live_fuzzy_match'] == 1) echo 'selected'; ?>>是</option>
+                    <option value="0" <?php if (isset($Config['live_fuzzy_match']) && $Config['live_fuzzy_match'] == 0) echo 'selected'; ?>>否</option>
+                </select>
+            </div>
+            <div class="column">
+                <label for="live_url_comment">路线备注：</label>
+                <select id="live_url_comment" name="live_url_comment" required>
+                    <option value="1" <?php if (isset($Config['live_url_comment']) && $Config['live_url_comment'] == 1) echo 'selected'; ?>>是</option>
+                    <option value="0" <?php if (!isset($Config['live_url_comment']) || $Config['live_url_comment'] == 0) echo 'selected'; ?>>否</option>
+                </select>
+            </div>
+            <div class="column">
+            </div>
+        </div>
         <button id="saveConfig" type="button" onclick="saveLiveTemplate();">保存配置</button>
     </div>
 </div>

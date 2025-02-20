@@ -12,7 +12,8 @@ document.getElementById('settingsForm').addEventListener('submit', function(even
 
     const fields = ['update_config', 'gen_xml', 'include_future_only', 'ret_default', 'tvmao_default', 
         'all_chs', 'db_type', 'mysql_host', 'mysql_dbname', 'mysql_username', 'mysql_password', 
-        'gen_list_enable', 'check_update', 'token_range'];
+        'gen_list_enable', 'check_update', 'token_range', 'live_template_enable', 'live_fuzzy_match', 
+        'live_url_comment', 'live_tvg_logo_enable', 'live_tvg_id_enable', 'live_tvg_name_enable'];
 
     // 创建隐藏字段并将其添加到表单
     const form = this;
@@ -646,11 +647,20 @@ document.getElementById('sourceUrlTextarea').addEventListener('blur', function()
 
 // 保存编辑后的直播源信息
 function saveLiveSourceInfo() {
+    // 获取 checkbox 配置
+    const liveTvgLogoEnable = document.getElementById('live_tvg_logo_enable').value;
+    const liveTvgIdEnable = document.getElementById('live_tvg_id_enable').value;
+    const liveTvgNameEnable = document.getElementById('live_tvg_name_enable').value;
+
+    // 保存直播源信息
     fetch('manage.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             save_source_info: 'true',
+            live_tvg_logo_enable: liveTvgLogoEnable,
+            live_tvg_id_enable: liveTvgIdEnable,
+            live_tvg_name_enable: liveTvgNameEnable,
             content: JSON.stringify(allLiveData)
         })
     })
@@ -675,15 +685,15 @@ function cleanUnusedSource() {
     });
 }
 
-// 显示直播源信息
-function showLiveInfo(token, serverUrl) {
+// 显示直播源地址
+function showLiveUrl(token, serverUrl) {
     var m3uUrl = `${serverUrl}/?token=${token}&live=m3u`;
     var txtUrl = `${serverUrl}/?token=${token}&live=txt`;
     message = `M3U：<br><a href="${m3uUrl}" target="_blank">${m3uUrl}</a>
                 &ensp;<a href="${m3uUrl}" download="tv.m3u">下载</a><br>
                 TXT：<br><a href="${txtUrl}" target="_blank">${txtUrl}</a>
                 &ensp;&ensp;<a href="${txtUrl}" download="tv.txt">下载</a><br>
-                转换：<br>${m3uUrl}/txt&url=xxx`;
+                转换：<br>${m3uUrl}&url=xxx<br>${txtUrl}&url=xxx`;
     showMessageModal(message);
 }
 
@@ -712,8 +722,23 @@ function showLiveTemplate() {
 
 // 保存编辑后的直播源模板
 function saveLiveTemplate() {
-    liveTemplateContent = document.getElementById('liveTemplateTextarea').value;
+    // 保存配置
+    liveTemplateEnable = document.getElementById('live_template_enable').value;
+    liveFuzzyMatch = document.getElementById('live_fuzzy_match').value;
+    liveUrlComment = document.getElementById('live_url_comment').value;
+    fetch('manage.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            update_config_field: 'true',
+            live_template_enable: liveTemplateEnable,
+            live_fuzzy_match: liveFuzzyMatch,
+            live_url_comment: liveUrlComment
+        })
+    });
+
     // 内容写入 template.txt 文件
+    liveTemplateContent = document.getElementById('liveTemplateTextarea').value;
     fetch('manage.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1147,8 +1172,8 @@ function updateToken() {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
-            save_token: 'true',
-            content: newToken
+            update_config_field: 'true',
+            token: newToken
         })
     })
     .then(response => response.json())
