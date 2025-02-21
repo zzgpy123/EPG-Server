@@ -352,19 +352,10 @@ try {
                 $channelsData = [];
                 if (file_exists($csvFilePath)) {
                     $csvFile = fopen($csvFilePath, 'r');
-                    $header = fgetcsv($csvFile); // 跳过表头
+                    $header = fgetcsv($csvFile); // 读取表头
                     while (($row = fgetcsv($csvFile)) !== false) {
-                        $channelsData[] = [
-                            'groupTitle' => $row[0] ?? '',
-                            'channelName' => $row[1] ?? '',
-                            'streamUrl' => $row[2] ?? '',
-                            'iconUrl' => $row[3] ?? '',
-                            'tvgId' => $row[4] ?? '',
-                            'tvgName' => $row[5] ?? '',
-                            'disable' => $row[6] ?? '',
-                            'modified' => $row[7] ?? '',
-                            'tag' => $row[8] ?? '',
-                        ];
+                        if (count($row) !== count($header)) unset($header[array_search('source', $header)]); // 如果字段数量不一致，去掉 source 字段
+                        $channelsData[] = array_combine($header, $row); // 动态关联表头与行数据
                     }
                     fclose($csvFile);
                 }

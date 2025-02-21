@@ -410,6 +410,7 @@ function doParseSourceInfo($urlLine = null) {
         $csvFile = fopen($csvFilePath, 'r');
         $header = fgetcsv($csvFile); // 读取表头
         while ($row = fgetcsv($csvFile)) {
+            if (count($row) !== count($header)) unset($header[array_search('source', $header)]); // 如果字段数量不一致，去掉 source 字段
             $rowData = array_combine($header, $row);
             if ($rowData['modified'] == 1) { // 只保留 modified 为 1 的行
                 $existingData[$rowData['tag']] = $rowData; // 使用 tag 作为映射的键
@@ -444,7 +445,6 @@ function doParseSourceInfo($urlLine = null) {
         }
         
         $encoding = mb_detect_encoding($urlContent, ['UTF-8', 'GBK', 'CP936'], true);
-
         if ($encoding === 'GBK' || $encoding === 'CP936') {
             $urlContent = mb_convert_encoding($urlContent, 'UTF-8', 'GBK');
         }
