@@ -354,7 +354,7 @@ try {
                     $csvFile = fopen($csvFilePath, 'r');
                     $header = fgetcsv($csvFile); // 读取表头
                     while (($row = fgetcsv($csvFile)) !== false) {
-                        if (count($row) !== count($header)) unset($header[array_search('source', $header)]); // 如果字段数量不一致，去掉 source 字段
+                        if (count($row) !== count($header)) break; // 如果字段数量不一致，跳出循环
                         $channelsData[] = array_combine($header, $row); // 动态关联表头与行数据
                     }
                     fclose($csvFile);
