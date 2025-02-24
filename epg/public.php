@@ -598,14 +598,14 @@ function generateLiveFiles($channelData, $fileName) {
                 foreach ($channelData as $row) {
                     list($groupTitle, $channelName, $streamUrl, $iconUrl, $tvgId, $tvgName, $disable, $modified, $source) = array_values($row);
 
-                    if (!empty($groupInfo['source']) && !in_array($source, $groupInfo['source']) || 
-                        (stripos($groupTitle, $groupInfo['title']) === false && stripos($groupInfo['title'], $groupTitle) === false)) {
+                    if ((!empty($groupInfo['source']) && !in_array($source, $groupInfo['source'])) || ($groupInfo['title'] !== 'default' && 
+                        stripos($groupTitle, $groupInfo['title']) === false && stripos($groupInfo['title'], $groupTitle) === false)) {
                         continue;
                     }
 
                     // 更新信息
                     $streamUrl .= ($commentEnabled && strpos($streamUrl, '$') === false) ? "\${$groupTitle}" : ""; 
-                    $row['groupTitle'] = $groupInfo['title'];
+                    $row['groupTitle'] = $groupInfo['title'] === 'default' ? $groupTitle : $groupInfo['title'];
                     $row['streamUrl'] = $streamUrl;
                     $newChannelData[] = $row;
 

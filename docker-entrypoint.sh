@@ -20,11 +20,6 @@ cat <<EOF >> /etc/apache2/httpd.conf
     Options -Indexes
     AllowOverride All
     Require all granted
-
-    # Enable mod_rewrite for compatibility
-    RewriteEngine On
-    RewriteCond %{REQUEST_URI} ^/epg/?(.*)\$ 
-    RewriteRule ^epg/?(.*)\$ /\$1 [L,R=301]
 </Directory>
 
 # Block access to /htdocs/data except for /htdocs/data/icon

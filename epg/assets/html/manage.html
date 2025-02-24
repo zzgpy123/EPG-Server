@@ -177,8 +177,9 @@
             停用：停用后不会出现在生成的直播源文件中，包括单个直播源<br>
             保持：直播地址不变时，重新解析保持修改不变<br>
             模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准<br>
+            分组为「default」时，包含所有来源数据并使用原分组名称<br>
             模糊匹配：默认开启，选「否」进行精准匹配<br>
-            路线备注：默认关闭，选「是」在直播地址后添加「$分组」，<br>
+            路线备注：默认关闭，选「是」在直播地址后添加「$分组」<br>
             
             <h3 style="line-height: 0.5;">其他设置</h3>
             数据保存天数：清理超过设定天数的数据，包括节目单、定时日志、更新日志<br>
@@ -423,7 +424,7 @@
     <div class="modal-content live-template-modal-content">
         <span class="close">&times;</span>
         <h2>直播源模板<span style="font-size: 14px;">（生成直播源文件时仅包含以下数据）</span></h2>
-        <textarea id="liveTemplateTextarea" placeholder="#分组1&#10;频道1, 频道2&#10;频道3, 频道4&#10;&#10;#分组2&#10;&#10;#分组3, 来源1, 来源2&#10;&#10;..."
+        <textarea id="liveTemplateTextarea" placeholder="#分组1&#10;频道1, 频道2&#10;频道3, 频道4&#10;&#10;#分组2&#10;&#10;#分组3, 来源1, 来源2&#10;&#10;#default, 来源3, 来源4&#10;&#10;..."
             style="width: 100%; height: 350px;"></textarea><br>
         <div class="row" style="margin-top: 15px; margin-bottom: 15px;">
             <div class="column">
