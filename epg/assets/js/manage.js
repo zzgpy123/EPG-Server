@@ -671,7 +671,7 @@ function saveLiveSourceInfo() {
 
 // 清理未使用的直播源文件
 function cleanUnusedSource() {
-    fetch('manage.php?delete_unused_source=true')
+    fetch('manage.php?delete_unused_live_data=true')
     .then(response => response.json())
     .then(data => {
         if (data.success) {

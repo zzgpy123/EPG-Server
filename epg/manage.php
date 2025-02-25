@@ -172,7 +172,7 @@ try {
             'get_update_logs', 'get_cron_logs', 'get_channel', 'get_epg_by_channel',
             'get_icon', 'get_channel_bind_epg', 'get_channel_match', 'get_gen_list',
             'get_live_data', 'parse_source_info', 'toggle_status', 
-            'download_data', 'delete_unused_icons', 'delete_unused_source',
+            'download_data', 'delete_unused_icons', 'delete_unused_live_data',
             'get_version_log'
         ];
         $action = key(array_intersect_key($_GET, array_flip($action_map))) ?: '';
@@ -348,16 +348,17 @@ try {
                 $templateContent = file_exists($templateFilePath) ? file_get_contents($templateFilePath) : '';
 
                 // 读取 channels.csv 文件内容
-                $csvFilePath = $liveDir . 'channels.csv';
+                $channelsFilePath = $liveDir . 'channels.csv';
                 $channelsData = [];
-                if (file_exists($csvFilePath)) {
-                    $csvFile = fopen($csvFilePath, 'r');
-                    $header = fgetcsv($csvFile); // 读取表头
-                    while (($row = fgetcsv($csvFile)) !== false) {
+                if (file_exists($channelsFilePath)) {
+                    $channelsFile = fopen($channelsFilePath, 'r');
+                    $header = fgetcsv($channelsFile); // 读取表头
+                    while (($row = fgetcsv($channelsFile)) !== false) {
+                        if (empty(array_filter($row))) continue; // 跳过空行
                         if (count($row) !== count($header)) break; // 如果字段数量不一致，跳出循环
                         $channelsData[] = array_combine($header, $row); // 动态关联表头与行数据
                     }
-                    fclose($csvFile);
+                    fclose($channelsFile);
                 }
                 
                 $dbResponse = ['source_content' => $sourceContent, 'template_content' => $templateContent, 'channels' => $channelsData,];
@@ -420,15 +421,15 @@ try {
                 $dbResponse = ['success' => true, 'message' => "共清理了 $deletedCount 个台标"];
                 break;
 
-            case 'delete_unused_source':
-                // 清理未在使用的直播源
+            case 'delete_unused_live_data':
+                // 清理未在使用的直播源缓存、未出现在频道列表中的修改记录
                 $sourceFilePath = $liveDir . 'source.txt';
                 $sourceContent = file_exists($sourceFilePath) ? file_get_contents($sourceFilePath) : '';
                 $urls = array_map('trim', explode("\n", $sourceContent));
 
                 // 遍历 live/file 目录，删除未使用的文件
                 $parentRltPath = '/' . basename(__DIR__) . '/data/live/file/'; // 相对路径
-                $deletedCount = 0;
+                $deletedFileCount = 0;
                 foreach (scandir($liveFileDir) as $file) {
                     if ($file === '.' || $file === '..') continue;
                     $fileRltPath = $parentRltPath . $file;
@@ -438,11 +439,49 @@ try {
                         return $url && (stripos($fileRltPath, $url) !== false || stripos($fileRltPath, $urlmd5) !== false);
                     })) {
                         if (@unlink($liveFileDir . $file)) { // 如果没有匹配的 URL，删除文件
-                            $deletedCount++;
+                            $deletedFileCount++;
                         }
                     }
                 }
-                $dbResponse = ['success' => true, 'message' => "共清理了 $deletedCount 个文件"];
+
+                // 删除 modifications.csv 未在 channels.csv 中出现的条目
+                $channelsFilePath = $liveDir . 'channels.csv';
+                $modificationsFilePath = $liveDir . 'modifications.csv';
+                
+                $deletedRecordCount = 0;
+                if (file_exists($channelsFilePath) && file_exists($modificationsFilePath)) {
+                    // 读取 channels.csv 中的 tag 字段
+                    $channelTags = [];
+                    $file = fopen($channelsFilePath, 'r');
+                    $header = fgetcsv($file);
+                    while (($row = fgetcsv($file)) !== false) {
+                        $channelTags[] = $row[array_search('tag', $header)];
+                    }
+                    fclose($file);
+                
+                    // 过滤 modifications.csv 数据并统计移除行数
+                    $file = fopen($modificationsFilePath, 'r');
+                    $modificationsHeader = fgetcsv($file);
+                    $filteredData = [];
+                    while (($row = fgetcsv($file)) !== false) {
+                        if (in_array($row[array_search('tag', $modificationsHeader)], $channelTags)) {
+                            $filteredData[] = $row;
+                        } else {
+                            $deletedRecordCount++;
+                        }
+                    }
+                    fclose($file);
+                
+                    // 写回过滤后的数据
+                    $file = fopen($modificationsFilePath, 'w');
+                    fputcsv($file, $modificationsHeader);
+                    foreach ($filteredData as $row) {
+                        fputcsv($file, $row);
+                    }
+                    fclose($file);
+                }
+                
+                $dbResponse = ['success' => true, 'message' => "共清理了 $deletedFileCount 个缓存文件， $deletedRecordCount 条修改记录。"];
                 break;
 
             case 'get_version_log':
