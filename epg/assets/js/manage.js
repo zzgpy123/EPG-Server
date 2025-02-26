@@ -687,8 +687,8 @@ function cleanUnusedSource() {
 
 // 显示直播源地址
 function showLiveUrl(token, serverUrl) {
-    var m3uUrl = `${serverUrl}/?token=${token}&live=m3u`;
-    var txtUrl = `${serverUrl}/?token=${token}&live=txt`;
+    var m3uUrl = `${serverUrl}/index.php?token=${token}&live=m3u`;
+    var txtUrl = `${serverUrl}/index.php?token=${token}&live=txt`;
     message = `M3U：<br><a href="${m3uUrl}" target="_blank">${m3uUrl}</a>
                 &ensp;<a href="${m3uUrl}" download="tv.m3u">下载</a><br>
                 TXT：<br><a href="${txtUrl}" target="_blank">${txtUrl}</a>
@@ -701,7 +701,7 @@ function showLiveUrl(token, serverUrl) {
 function showTokenRangeMessage(token, serverUrl) {
     var tokenRange = document.getElementById("token_range").value;
     var message = '';
-    var baseUrl = serverUrl + '/?token=' + token;
+    var baseUrl = serverUrl + '/index.php?token=' + token;
     if (tokenRange == "1" || tokenRange == "3") {
         message += `直播源地址：<br><a href="${baseUrl}&live=m3u" target="_blank">${baseUrl}&live=m3u</a><br>
                     <a href="${baseUrl}&live=txt" target="_blank">${baseUrl}&live=txt</a>`;

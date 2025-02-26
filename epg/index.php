@@ -241,8 +241,6 @@ function liveFetchHandler($query_params) {
     $tvgUrl = $serverUrl . ($query_params['live'] === 'm3u' ? '/t.xml.gz' : '/');
     if ($query_params['live'] === 'm3u') {
         $content = preg_replace('/(#EXTM3U x-tvg-url=")(.*?)(")/', '$1' . $tvgUrl . '$3', $content, 1);
-    } elseif ($query_params['live'] === 'txt') {
-        $content = preg_replace('/#genre#/', '#genre#,' . $tvgUrl, $content, 1);
     }
 
     echo $content;
