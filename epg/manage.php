@@ -24,13 +24,16 @@ if ($Config['interval_time'] !== 0) {
     }
 }
 
-// 过渡到新的 md5 密码并生成 token（如果不存在或为空）
-if (!preg_match('/^[a-f0-9]{32}$/i', $Config['manage_password']) || empty($Config['token'])) {
+// 过渡到新的 md5 密码并生成默认 token、user_agent （如果不存在或为空）
+if (!preg_match('/^[a-f0-9]{32}$/i', $Config['manage_password']) || empty($Config['token']) || empty($Config['user_agent'])) {
     if (!preg_match('/^[a-f0-9]{32}$/i', $Config['manage_password'])) {
         $Config['manage_password'] = md5($Config['manage_password']);
     }
     if (empty($Config['token'])) {
         $Config['token'] = substr(bin2hex(random_bytes(5)), 0, 10);  // 生成 10 位随机字符串
+    }
+    if (empty($Config['user_agent'])) {
+        $Config['user_agent'] = substr(bin2hex(random_bytes(5)), 0, 10);  // 生成 10 位随机字符串
     }
     file_put_contents($configPath, json_encode($Config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }

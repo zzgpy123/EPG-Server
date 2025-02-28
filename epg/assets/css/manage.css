@@ -178,7 +178,7 @@ input[type="text"] {
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
     top: 50%;
     transform: translateY(-50%);
-    width: 660px;
+    width: 700px;
     height: 530px;
 }
 .version-update-modal-content,
@@ -300,6 +300,9 @@ input[type="text"] {
     display: flex;
     align-items: center;
     flex: 1; /* 每个列占据同等宽度 */
+}
+h2, span, label {
+    user-select: none;
 }
 .row label {
     white-space: nowrap; /* 确保label不会换行 */

@@ -688,7 +688,7 @@ function generateLiveFiles($channelData, $fileName) {
     } else {
         // 处理没有模板的情况
         foreach ($channelData as $row) {
-            list($groupTitle, $channelName, $streamUrl, $iconUrl, $tvgId, $tvgName, $disable) = array_values($row);
+            list($groupTitle, $channelName, , $streamUrl, $iconUrl, $tvgId, $tvgName, $disable) = array_values($row);
             if ($disable) continue;
     
             // 生成 M3U 内容

@@ -27,13 +27,22 @@ parse_str(str_replace('+', '%2B', parse_url($requestUrl, PHP_URL_QUERY)), $query
 // 获取 URL 中的 token 参数并验证
 $tokenRange = $Config['token_range'] ?? 1;
 $token = $query_params['token'] ?? '';
-$live = !empty($query_params['live']);
-if ($tokenRange !== 0 && $token !== $Config['token']) {
-    if (($tokenRange !== 2 && $live) || ($tokenRange !== 1 && !$live)) {
-        http_response_code(403);
-        echo '访问被拒绝：无效的 Token。';
-        exit;
-    }
+$live = $query_params['live'] ?? '';
+if ($tokenRange !== 0 && $token !== $Config['token'] && 
+    (($tokenRange !== 2 && $live) || ($tokenRange !== 1 && !$live))) {
+    http_response_code(403);
+    echo '访问被拒绝：无效的 Token。';
+    exit;
+}
+
+// 获取请求的 User-Agent 并验证
+$userAgentRange = $Config['user_agent_range'] ?? 0;
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+if ($userAgentRange !== 0 && $userAgent !== $Config['user_agent'] && 
+    (($userAgentRange !== 2 && $live) || ($userAgentRange !== 1 && !$live))) {
+    http_response_code(403);
+    echo '访问被拒绝：无效的 User-Agent。';
+    exit;
 }
 
 // 禁止输出错误提示
@@ -101,15 +110,12 @@ function readEPGData($date, $oriChannelName, $cleanChannelName, $db, $type) {
         SELECT epg_diyp
         FROM epg_data
         WHERE (
-            channel = :channel
+            (channel = :channel
             OR channel LIKE :like_channel
-            OR :channel LIKE $concat
+            OR :channel LIKE $concat)
+            AND date = :date
         )
         ORDER BY
-            CASE
-                WHEN date = :date THEN 1
-                ELSE 2
-            END,
             CASE
                 WHEN channel = :channel THEN 1
                 WHEN channel LIKE :like_channel THEN 2
@@ -278,34 +284,18 @@ function fetchHandler($query_params) {
 
     // 返回 diyp、lovetv 数据
     if (isset($query_params['ch']) || isset($query_params['channel'])) {
-        function processResponse($response, $oriChannelName, $date, $type, $init) {
-            $responseData = json_decode($response, true);
-            $resDate = ($type === 'diyp') ? $responseData['date'] : date('Y-m-d', $responseData[$oriChannelName]['program'][0]['st']);
-            if ($resDate === $date) {
-                makeRes($response, $init['status'], $init['headers']);
-                exit;
-            }
-            return false;
-        }
-
         $type = isset($query_params['ch']) ? 'diyp' : 'lovetv';
         $response = readEPGData($date, $oriChannelName, $cleanChannelName, $db, $type);
-
-        // 频道在列表中但无当天数据，尝试通过 tvmao 接口获取数据
-        $retry = $response && !processResponse($response, $oriChannelName, $date, $type, $init);
-        if ($retry && $Config['tvmao_default'] === 1 && $date >= date('Y-m-d')) {
-            $matchChannelName = json_decode($response, true)['channel_name'] ?? $oriChannelName;
-            downloadJSONData('tvmao', $matchChannelName, $db, $log_messages, $replaceFlag = false); // 只更新无数据的日期
-            ob_end_clean(); // 清除缓存内容，避免显示
-            $newResponse = readEPGData($date, $oriChannelName, $matchChannelName, $db, $type);
-            processResponse($newResponse, $oriChannelName, $date, $type, $init);
+        if ($response) {
+            makeRes($response, $init['status'], $init['headers']);
+            exit;
         }
 
-        // 返回默认数据
+        // 无法获取到数据时返回默认数据
         $ret_default = !isset($Config['ret_default']) || $Config['ret_default'];
         $iconUrl = iconUrlMatch($cleanChannelName) ?? iconUrlMatch($oriChannelName);
         if ($type === 'diyp') {
-            // 无法获取到数据时返回默认 diyp 数据
+            // 返回默认 diyp 数据
             $default_diyp_program_info = [
                 'channel_name' => $cleanChannelName,
                 'date' => $date,
@@ -322,7 +312,7 @@ function fetchHandler($query_params) {
             ];
             $response = json_encode($default_diyp_program_info, JSON_UNESCAPED_UNICODE);
         } else {
-            // 无法获取到数据时返回默认 lovetv 数据
+            // 返回默认 lovetv 数据
             $default_lovetv_program_info = [
                 $cleanChannelName => [
                     'isLive' => '',

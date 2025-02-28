@@ -10,7 +10,6 @@
     "gen_xml": 1,
     "include_future_only": 1,
     "ret_default": 0,
-    "tvmao_default": 0,
     "all_chs": 0,
     "db_type": "sqlite",
     "gen_list_enable": 0,
@@ -30,6 +29,8 @@
     "live_url_comment": 0,
     "token": "",
     "token_range": 1,
+    "user_agent": "",
+    "user_agent_range": 0,
     "default_icon": "",
     "check_update": 1,
     "manage_password": ""
