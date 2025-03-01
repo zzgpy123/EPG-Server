@@ -37,12 +37,15 @@ if ($tokenRange !== 0 && $token !== $Config['token'] &&
 
 // 获取请求的 User-Agent 并验证
 $userAgentRange = $Config['user_agent_range'] ?? 0;
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-if ($userAgentRange !== 0 && $userAgent !== $Config['user_agent'] && 
-    (($userAgentRange !== 2 && $live) || ($userAgentRange !== 1 && !$live))) {
-    http_response_code(403);
-    echo '访问被拒绝：无效的 User-Agent。';
-    exit;
+if ($userAgentRange !== 0) {
+    $allowedUserAgents = array_map('trim', explode(',', $Config['user_agent'] ?? ''));
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    if (!in_array($userAgent, $allowedUserAgents) && (($userAgentRange !== 2 && $live) || 
+       ($userAgentRange !== 1 && !$live))) {
+        http_response_code(403);
+        echo '访问被拒绝：无效的 User-Agent。';
+        exit;
+    }
 }
 
 // 禁止输出错误提示

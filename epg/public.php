@@ -533,7 +533,7 @@ function doParseSourceInfo($urlLine = null) {
         $chsChannelNames = explode("\n", t2s(implode("\n", $channelNames))); // 繁简转换
 
         // 将转换后的信息写回 urlChannelData
-        foreach ($urlChannelData as &$row) {
+        foreach ($urlChannelData as $index => &$row) {
             // 检查该行是否已经修改
             if (isset($existingData[$row['tag']])) {
                 $row = $existingData[$row['tag']];
@@ -541,7 +541,7 @@ function doParseSourceInfo($urlLine = null) {
             }
 
             // 更新部分信息
-            $chsChannelName = array_shift($chsChannelNames);
+            $chsChannelName = $chsChannelNames[$index];
             $cleanChannelName = cleanChannelName($chsChannelName);
             $dbChannelName = dbChannelNameMatch($cleanChannelName);
             $finalChannelName = $dbChannelName ?: $cleanChannelName;

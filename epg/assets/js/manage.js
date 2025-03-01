@@ -1137,18 +1137,19 @@ document.getElementById('importFile').addEventListener('change', function() {
 // 修改 token、user_agent 对话框
 function changeTokenUA(type, currentTokenUA) {
     showMessageModal('');
+    typeStr = type === 'token' ? 'Token' : 'User-Agent<br>支持多个，逗号分隔';
     document.getElementById('messageModalMessage').innerHTML = `
-        <div style="width: 180px; height: 125px;">
-            <h3>修改 ${type}</h3>
+        <div style="width: 180px;">
+            <h3>修改 ${typeStr}</h3>
             <input type="text" value="${currentTokenUA}" id="newTokenUA" style="text-align: center; font-size: 15px; margin-bottom: 15px;" />
-            <button onclick="updateTokenUA('${type}')">确认</button>
+            <button onclick="updateTokenUA('${type}')" style="margin-bottom: -10px;">确认</button>
         </div>
     `;
 }
 
 // 更新 token、user_agent 到 config.json
 function updateTokenUA(type) {
-    var newTokenUA = document.getElementById('newTokenUA').value;
+    var newTokenUA = document.getElementById('newTokenUA').value.replace(/，/g, ","); // 将中文逗号替换为英文逗号
 
     // 内容写入 config.json 文件
     fetch('manage.php', {
