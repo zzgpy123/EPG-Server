@@ -1,9 +1,9 @@
-name: Generate and Publish UPDATELOG
+name: genUpdateLog
 
 on:
   push:
     branches:
-      - main  # 触发条件：main 分支有 push 时触发
+      - main
 
 jobs:
   generate-and-publish-updatelog:
@@ -25,6 +25,8 @@ jobs:
       - name: Create Release
         id: create-release
         uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           tag_name: updatelog-${{ github.run_id }}
           release_name: Update Log (${{ github.run_id }})
@@ -36,6 +38,8 @@ jobs:
 
       - name: Upload UPDATELOG.md
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           upload_url: ${{ steps.create-release.outputs.upload_url }}
           asset_path: ./UPDATELOG.md
