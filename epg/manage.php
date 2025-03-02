@@ -729,7 +729,7 @@ try {
                     exit;
                 }
             
-                generateLiveFiles($content, 'tv'); // 重新生成 M3U 和 TXT 文件
+                generateLiveFiles($content, 'tv', $saveOnly = true); // 重新生成 M3U 和 TXT 文件
                 echo json_encode(['success' => true]);
                 exit;
 

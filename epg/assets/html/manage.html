@@ -179,7 +179,7 @@
             模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准<br>
             分组为「default」时，包含所有来源数据并使用原分组名称<br>
             模糊匹配：默认开启，选「否」进行精准匹配<br>
-            路线备注：默认关闭，选「是」在直播地址后添加「$分组」<br>
+            线路备注：默认关闭，在直播地址后添加「$分组」<br>
             
             <h3 style="line-height: 0.5;">其他设置</h3>
             数据保存天数：清理超过设定天数的数据，包括节目单、定时日志、更新日志<br>
@@ -442,10 +442,12 @@
                 </select>
             </div>
             <div class="column">
-                <label for="live_url_comment">路线备注：</label>
+                <label for="live_url_comment">线路备注：</label>
                 <select id="live_url_comment" name="live_url_comment" required>
-                    <option value="1" <?php if (isset($Config['live_url_comment']) && $Config['live_url_comment'] == 1) echo 'selected'; ?>>是</option>
-                    <option value="0" <?php if (!isset($Config['live_url_comment']) || $Config['live_url_comment'] == 0) echo 'selected'; ?>>否</option>
+                    <option value="0" <?php if (!isset($Config['live_url_comment']) || $Config['live_url_comment'] == 0) echo 'selected'; ?>>关闭</option>
+                    <option value="1" <?php if (isset($Config['live_url_comment']) && $Config['live_url_comment'] == 1) echo 'selected'; ?>>TXT</option>
+                    <option value="2" <?php if (isset($Config['live_url_comment']) && $Config['live_url_comment'] == 2) echo 'selected'; ?>>M3U</option>
+                    <option value="3" <?php if (isset($Config['live_url_comment']) && $Config['live_url_comment'] == 3) echo 'selected'; ?>>全部</option>
                 </select>
             </div>
             <div class="column">
