@@ -815,7 +815,7 @@ function filterChannels(type) {
                 row.innerHTML = `
                     <td contenteditable="true">${item.channel}</td>
                     <td contenteditable="true">${item.icon || ''}</td>
-                    <td>${item.icon ? `<a href="${item.icon}" target="_blank"><img src="${item.icon}" style="max-width: 80px; max-height: 50px; background-color: #ccc;"></a>` : ''}</td>
+                    <td>${item.icon ? `<a href="${item.icon}" target="_blank"><img loading="lazy" src="${item.icon}" style="max-width: 80px; max-height: 50px; background-color: #ccc;"></a>` : ''}</td>
                     <td>
                         <input type="file" accept="image/png" style="display:none;" id="file_${index}">
                         <button onclick="document.getElementById('file_${index}').click()" style="font-size: 14px; width: 50px;">上传</button>
@@ -851,7 +851,7 @@ function handleIconFileUpload(event, item, row, allData) {
                     item.icon = iconUrl;
                     row.cells[2].innerHTML = `
                         <a href="${iconUrl}?${new Date().getTime()}" target="_blank">
-                            <img src="${iconUrl}?${new Date().getTime()}" style="max-width: 80px; max-height: 50px; background-color: #ccc;">
+                            <img loading="lazy" src="${iconUrl}?${new Date().getTime()}" style="max-width: 80px; max-height: 50px; background-color: #ccc;">
                         </a>
                     `;
                     document.getElementById('iconTable').dataset.allIcons = JSON.stringify(allData);
@@ -916,7 +916,7 @@ function uploadAllIcons() {
                     iconCell.innerText = iconUrl;
                     previewCell.innerHTML = `
                         <a href="${iconUrl}?${Date.now()}" target="_blank">
-                            <img src="${iconUrl}?${Date.now()}" style="max-width: 80px; max-height: 50px; background-color: #ccc;">
+                            <img loading="lazy" src="${iconUrl}?${Date.now()}" style="max-width: 80px; max-height: 50px; background-color: #ccc;">
                         </a>
                     `;
 
