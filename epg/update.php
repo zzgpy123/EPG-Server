@@ -135,9 +135,9 @@ function getChannelBindEPG() {
 }
 
 // 下载 XML 数据并存入数据库
-function downloadXmlData($xml_url, $db, &$log_messages, $gen_list) {
+function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list) {
     global $Config;
-    $xml_data = downloadData($xml_url);
+    $xml_data = downloadData($xml_url, $userAgent);
     if ($xml_data !== false && stripos($xml_data, 'not found') === false) {
         if (substr($xml_data, 0, 2) === "\x1F\x8B") { // 通过魔数判断 .gz 文件
             $xml_data = gzdecode($xml_data);
@@ -510,16 +510,18 @@ foreach ($Config['xml_urls'] as $xml_url) {
     }
 
     // 更新 XML 数据
-    $cleaned_url = trim(explode('#', strpos($xml_url, '=>') !== false ? explode('=>', $xml_url)[1] : $xml_url)[0]);
+    list($xml_url_str, , $userAgent) = explode('#', $xml_url) + [1 => '', 2 => ''];
+    $userAgent = trim($userAgent);
+    $cleaned_url = trim(strpos($xml_url_str, '=>') !== false ? explode('=>', $xml_url_str)[1] : $xml_url_str);
     logMessage($log_messages, "【地址】 $cleaned_url");
 
     // 判断是否有限定频道列表并下载数据
-    if (strpos($xml_url, '=>') !== false) {
-        $tmp_gen_list = array_map('trim', explode(",", explode('=>', $xml_url)[0]));
+    if (strpos($xml_url_str, '=>') !== false) {
+        $tmp_gen_list = array_map('trim', explode(",", explode('=>', $xml_url_str)[0]));
         logMessage($log_messages, "【临时】 限定频道：" . implode(", ", $tmp_gen_list));
-        downloadXmlData($cleaned_url, $db, $log_messages, $tmp_gen_list, 1);
+        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $tmp_gen_list, 1);
     } else {
-        downloadXmlData($cleaned_url, $db, $log_messages, $gen_list);
+        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $gen_list);
     }
 }
 

@@ -393,7 +393,7 @@ try {
                 // 下载数据
                 $url = filter_var(($_GET['url']), FILTER_VALIDATE_URL);
                 if ($url) {
-                    $data = downloadData($url, 5);
+                    $data = downloadData($url, '', 5);
                     if ($data !== false) {
                         $dbResponse = ['success' => true, 'data' => $data];
                     } else {

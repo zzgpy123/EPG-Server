@@ -165,7 +165,7 @@ function iconUrlMatch($originalChannel, $getDefault = true) {
 }
 
 // 下载文件
-function downloadData($url, $timeout = 30, $connectTimeout = 10, $retry = 3) {
+function downloadData($url, $userAgent = '', $timeout = 30, $connectTimeout = 10, $retry = 3) {
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_SSL_VERIFYPEER => 0,
@@ -175,7 +175,8 @@ function downloadData($url, $timeout = 30, $connectTimeout = 10, $retry = 3) {
         CURLOPT_TIMEOUT => $timeout,
         CURLOPT_CONNECTTIMEOUT => $connectTimeout,
         CURLOPT_HTTPHEADER => [
-            'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
+            'User-Agent: ' . $userAgent ?: 
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
             'Accept: */*',
             'Connection: keep-alive'
         ]
@@ -434,14 +435,15 @@ function doParseSourceInfo($urlLine = null) {
         if (empty($line) || $line[0] === '#') continue;
     
         // 解析 URL 和分组前缀
-        list($url, $groupPrefix) = explode('#', $line) + [1 => ''];
+        list($url, $groupPrefix, $userAgent) = explode('#', $line) + [1 => '', 2 => ''];
         $url = trim($url);
         $groupPrefix = ltrim($groupPrefix);
+        $userAgent = trim($userAgent);
     
         // 获取 URL 内容
         $urlContent = (stripos($url, '/data/live/file/') === 0) 
             ? @file_get_contents(__DIR__ . $url) 
-            : downloadData($url, 5);
+            : downloadData($url, $userAgent, 5);
         $fileName = md5(urlencode($url));  // 用 MD5 对 URL 进行命名
         $localFilePath = $liveFileDir . '/' . $fileName . '.m3u';
         

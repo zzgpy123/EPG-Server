@@ -144,6 +144,7 @@
 
             <h3 style="line-height: 0.5;">EPG地址</h3>
             支持 .xml 跟 .xml.gz 格式，地址前 # 临时停用，后 # 备注，快捷键：Ctrl+/<br>
+            自定义 UA ： url #备注 #自定义UA（如：url #备注 #OKhttp/1.31）<br>
             只提取部分频道：频道名1, 频道名2 => 源地址<br>
             示例：tvmao, 频道id, [自定义:]频道id, ...<br>
             示例：cntv[:n], 频道id, [自定义:]频道id, ...<br>
@@ -168,6 +169,7 @@
             支持 .txt 和 .m3u 格式，光标离开后自动保存<br>
             地址前 # 临时停用，后 # 备注并作为分组前缀，快捷键：Ctrl+/<br>
             示例：https://xxx.xx/xx.m3u #前缀1:<br>
+            自定义 UA ： url #备注 #自定义UA（如：url #备注 #OKhttp/1.31）<br>
             在生成 m3u 文件时，「台标地址」、「tvg-id」、「tvg-name」字段可选<br>
             转换直播源：<?php echo $serverUrl . '/index.php?token=' . $Config['token']; ?>&live=txt/m3u&url=xxx<br>
             可添加 &latest=1 获取最新文件，不读取缓存<br>
