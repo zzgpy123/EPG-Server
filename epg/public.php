@@ -468,13 +468,19 @@ function doParseSourceInfo($urlLine = null) {
                 // 跳过空行和 M3U 头部
                 if (empty($urlContentLine) || strpos($urlContentLine, '#EXTM3U') === 0) continue;
     
-                if (strpos($urlContentLine, '#EXTINF') === 0 && isset($urlContentLines[$i + 1])) {
-                    // 处理 `#EXTINF` 行，提取频道信息
+                if (strpos($urlContentLine, '#EXTINF') === 0 && isset($urlContentLines[$i + 1]) && 
+                    strpos($urlContentLines[$i + 1], '#EXTINF') !== 0) {
+                    // 处理 #EXTINF 行，提取频道信息
                     if (preg_match('/#EXTINF:-?\d+(.*),(.+)/', $urlContentLine, $matches)) {
                         $channelInfo = $matches[1];
                         $groupTitle = preg_match('/group-title="([^"]+)"/', $channelInfo, $match) ? trim($match[1]) : '';
                         $originalChannelName = trim($matches[2]);
-                        $streamUrl = trim($urlContentLines[$i + 1]);
+                        $streamUrl = '';
+                        $j = $i + 1;
+                        while (!empty($urlContentLines[$j]) && $urlContentLines[$j][0] === '#') {
+                            $streamUrl .= trim($urlContentLines[$j++]) . '<br>';
+                        }
+                        $streamUrl .= trim($urlContentLines[$j] ?? '');
                         $tag = md5($url . $groupTitle . $originalChannelName . $streamUrl);
 
                         $rowData = [
@@ -623,6 +629,9 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                     }
 
                     // 更新信息
+                    $streamParts = explode("<br>", $streamUrl);
+                    $streamUrl = array_pop($streamParts);
+                    $extraInfo = $streamParts ? implode("\n", $streamParts) . "\n" : '';
                     $txtStreamUrl = $streamUrl . (($txtCommentEnabled && strpos($streamUrl, '$') === false) ? "\${$groupTitle}" : "");
                     $m3uStreamUrl = $streamUrl . (($m3uCommentEnabled && strpos($streamUrl, '$') === false) ? "\${$groupTitle}" : "");
                     $rowGroupTitle = $templateGroupTitle === 'default' ? $groupTitle : $templateGroupTitle;
@@ -640,7 +649,7 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                         " group-title=\"$rowGroupTitle\"," . 
                         "$channelName";
 
-                    $m3uContent .= $extInfLine . "\n" . $m3uStreamUrl . "\n";
+                    $m3uContent .= $extInfLine . "\n" . $extraInfo . $m3uStreamUrl . "\n";
                     $groups[$rowGroupTitle][] = "$channelName,$txtStreamUrl";
                 }
             } else {
@@ -665,9 +674,12 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                         // CGTN 和 CCTV 不进行模糊匹配
                         if ($channelName === $groupChannelName || 
                             ($fuzzyMatchingEnable && ($cleanChsChannelName === $cleanChsGroupChannelName || 
-                            stripos($cleanChsGroupChannelName, 'CGTN') === false && stripos($cleanChsGroupChannelName, 'CCTV') === false &&
+                            stripos($cleanChsGroupChannelName, 'CGTN') === false && stripos($cleanChsGroupChannelName, 'CCTV') === false && !empty($cleanChsChannelName) && 
                             (stripos($cleanChsChannelName, $cleanChsGroupChannelName) !== false || stripos($cleanChsGroupChannelName, $cleanChsChannelName) !== false)))) {
                             // 更新信息
+                            $streamParts = explode("<br>", $streamUrl);
+                            $streamUrl = array_pop($streamParts);
+                            $extraInfo = $streamParts ? implode("\n", $streamParts) . "\n" : '';
                             $txtStreamUrl = $streamUrl . (($txtCommentEnabled && strpos($streamUrl, '$') === false) ? "\${$groupTitle}" : "");
                             $m3uStreamUrl = $streamUrl . (($m3uCommentEnabled && strpos($streamUrl, '$') === false) ? "\${$groupTitle}" : "");
                             $rowGroupTitle = $templateGroupTitle === 'default' ? $groupTitle : $templateGroupTitle;
@@ -686,7 +698,7 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                                 " group-title=\"$rowGroupTitle\"," . 
                                 "$groupChannelName"; // 使用 $groupChannels 中的名称
 
-                            $m3uContent .= $extInfLine . "\n" . $m3uStreamUrl . "\n";
+                            $m3uContent .= $extInfLine . "\n" . $extraInfo . $m3uStreamUrl . "\n";
                             $groups[$rowGroupTitle][] = "$groupChannelName,$txtStreamUrl";
                         }
                     }
@@ -707,8 +719,11 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                 ($iconUrl && $liveTvgLogoEnable ? " tvg-logo=\"$iconUrl\"" : "") . 
                 ($groupTitle ? " group-title=\"$groupTitle\"" : "") . 
                 ",$channelName";
-    
-            $m3uContent .= $extInfLine . "\n" . $streamUrl . "\n";
+                
+            $streamParts = explode("<br>", $streamUrl);
+            $streamUrl = array_pop($streamParts);
+            $extraInfo = $streamParts ? implode("\n", $streamParts) . "\n" : '';
+            $m3uContent .= $extInfLine . "\n" . $extraInfo . $streamUrl . "\n";
             $groups[$groupTitle ?: "未分组"][] = "$channelName,$streamUrl";
         }
     }
