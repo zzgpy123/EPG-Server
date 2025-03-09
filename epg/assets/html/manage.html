@@ -94,7 +94,7 @@
         <input id="update_config" name="update_config" type="submit" value="保存配置">
         <br><br>
         <div class="button-container">
-            <a href="update.php" target="_blank">更新数据</a>
+            <button type="button" onclick="showExecResult('update.php')">更新数据</button>
             <a href="assets/phpliteadmin.php" target="_blank" onclick="return handleDbManagement();">管理数据</a>
             <a href="assets/tinyfilemanager/index.php" target="_blank">管理文件</a>
             <button type="button" onclick="showModal('cron')">定时日志</button>
@@ -173,12 +173,13 @@
             在生成 m3u 文件时，「台标地址」、「tvg-id」、「tvg-name」字段可选<br>
             转换直播源：<?php echo $serverUrl . '/index.php?token=' . $Config['token']; ?>&live=txt/m3u&url=xxx<br>
             可添加 &latest=1 获取最新文件，不读取缓存<br>
-            同步：更新数据时，同步更新直播源数据，默认关闭<br>
-            改名：解析直播源数据时，使用数据库信息修正频道名，默认关闭<br>
+            同步更新：更新 EPG 数据时，同步更新直播源数据，默认关闭<br>
+            频道更名：解析直播源数据时，使用数据库信息修正频道名，默认关闭<br>
+            测速校验：检验每个直播源的访问速度及分辨率，无法访问则停用<br>
             清理：删除未出现在列表中的直播源文件缓存、未出现在频道列表中的修改记录<br>
             停用：停用后不会出现在生成的直播源文件中，包括单个直播源<br>
             保持：直播地址不变时，重新解析保持修改不变<br>
-            模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准<br>
+            直播源模板：生成直播源文件时仅包含模板数据，分组、频道名以模板为准<br>
             分组为「default」时，包含所有来源数据并使用原分组名称<br>
             模糊匹配：默认开启，选「否」进行精准匹配<br>
             线路备注：默认关闭，在直播地址后添加「$分组」<br>
@@ -363,19 +364,14 @@
         <br>
         
         <!-- 中间按钮区 -->
-        <div class="button-container" style="width: 90%;">
+        <div class="button-container" style="width: 80%;">
             <input type="file" name="liveSourceFile" id="liveSourceFile" style="display: none;" accept=".m3u, .txt">
             <button id="uploadSourceBtn" onclick="document.getElementById('liveSourceFile').click()">上传源</button>
             <button id="parseSourceInfoBtn" onclick="parseSourceInfo()">解析源</button>
             <button id="showLiveUrlBtn" onclick="showLiveUrl(`<?php echo $Config['token']; ?>`, `<?php echo $serverUrl; ?>`, `<?php echo $Config['token_range']; ?>`)">访问地址</button>
-            <button id="toggleLiveSourceSyncBtn" onclick="toggleStatus('toggleLiveSourceSyncBtn')">
-                同步: <?php echo (isset($Config['live_source_auto_sync']) && $Config['live_source_auto_sync'] == 1 ? '是' : '否'); ?>
-            </button>
-            <button id="toggleLiveChannelNameProcessBtn" onclick="toggleStatus('toggleLiveChannelNameProcessBtn')">
-                改名: <?php echo (isset($Config['live_channel_name_process']) && $Config['live_channel_name_process'] == 1 ? '是' : '否'); ?>
-            </button>
-            <button id="showLiveTemplateBtn" onclick="showLiveTemplate()">模板</button>
-            <button id="cleanUnusedSourceBtn" onclick="cleanUnusedSource()">清理</button>
+            <button id="showLiveTemplateBtn" onclick="showLiveTemplate()">直播源模板</button>
+            <button id="showMoreLiveSettingBtn" onclick="showMoreLiveSetting(`<?php echo (isset($Config['live_source_auto_sync']) && $Config['live_source_auto_sync'] == 1 ? '同步更新: 是' : '同步更新: 否'); ?>`, 
+                                                        `<?php echo (isset($Config['live_channel_name_process']) && $Config['live_channel_name_process'] == 1 ? '频道更名: 是' : '频道更名: 否'); ?>`)">更多设置</button>
             <button id="saveSourceBtn" onclick="saveLiveSourceInfo()">保存</button>
         </div>
         <br>
@@ -388,8 +384,8 @@
                         <th style='width: 33px'>序号</th>
                         <th style='width: 10%'>分组</th>
                         <th style='width: 10%'>频道名</th>
-                        <th>直播地址</th>
-                        <th style='width: 20%'>台标地址<input type="checkbox" id="live_tvg_logo_enable" 
+                        <th style='width: 20%'>直播地址</th>
+                        <th style='width: 15%'>台标地址<input type="checkbox" id="live_tvg_logo_enable" 
                             value="<?php echo isset($Config['live_tvg_logo_enable']) ? $Config['live_tvg_logo_enable'] : 1; ?>" 
                             <?php echo (!isset($Config['live_tvg_logo_enable']) || $Config['live_tvg_logo_enable'] == 1) ? 'checked' : ''; ?>
                             onchange="this.value = this.checked ? 1 : 0;">
@@ -404,6 +400,8 @@
                             <?php echo (!isset($Config['live_tvg_name_enable']) || $Config['live_tvg_name_enable'] == 1) ? 'checked' : ''; ?>
                             onchange="this.value = this.checked ? 1 : 0;">
                         </th>
+                        <th style='width: 45px'>分辨率</th>
+                        <th style='width: 42px'>响应</th>
                         <th style='width: 30px'>停用</th>
                         <th style='width: 30px'>保持</th>
                     </tr>

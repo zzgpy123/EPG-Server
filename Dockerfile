@@ -14,6 +14,7 @@ RUN apk --no-cache --update \
     curl \
     memcached \
     tzdata \
+    ffmpeg \
     php83-apache2 \
     php83-bcmath \
     php83-bz2 \

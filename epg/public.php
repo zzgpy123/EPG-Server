@@ -624,7 +624,7 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
                     list($groupTitle, $channelName, , $streamUrl, $iconUrl, $tvgId, $tvgName, $disable, , $source) = array_values($row);
 
                     if ((!empty($groupInfo['source']) && !in_array($source, $groupInfo['source'])) || ($templateGroupTitle !== 'default' && 
-                        stripos($groupTitle, $templateGroupTitle) === false && stripos($templateGroupTitle, $groupTitle) === false)) {
+                        (empty($groupTitle) || stripos($groupTitle, $templateGroupTitle) === false && stripos($templateGroupTitle, $groupTitle) === false))) {
                         continue;
                     }
 
@@ -753,6 +753,7 @@ function generateLiveFiles($channelData, $fileName, $saveOnly = false) {
         fputcsv($modificationsFile, $title); // 写入表头
 
         foreach ($channelData as $row) {
+            unset($row['resolution'], $row['speed']); // 删除 resolution 跟 speed 键
             fputcsv($channelsFile, $row);
 
             // 处理 existingData
