@@ -146,6 +146,7 @@
             支持 .xml 跟 .xml.gz 格式，地址前 # 临时停用，后 # 备注，快捷键：Ctrl+/<br>
             自定义 UA ： url #备注 #自定义UA（如：url #备注 #OKhttp/1.31）<br>
             只提取部分频道：频道名1, 频道名2 => 源地址<br>
+            不提取部分频道：!频道名1, 频道名2 => 源地址<br>
             示例：tvmao, 频道id, [自定义:]频道id, ...<br>
             示例：cntv[:n], 频道id, [自定义:]频道id, ...<br>
             [] 表示可选（使用时不包含[]）， :n 表示未来 n 天数据，缺省为 1<br>
@@ -174,6 +175,7 @@
             转换直播源：<?php echo $serverUrl . '/index.php?token=' . strtok($Config['token'], ','); ?>&live=txt/m3u&url=xxx<br>
             可添加 &latest=1 获取最新文件，不读取缓存<br>
             同步更新：更新 EPG 数据时，同步更新直播源数据，默认关闭<br>
+            同步测速：更新 EPG 数据时，同步进行测速检验，默认关闭<br>
             频道更名：解析直播源数据时，使用数据库信息修正频道名，默认关闭<br>
             测速校验：检验每个直播源的访问速度及分辨率，无法访问则停用<br>
             清理：删除未出现在列表中的直播源文件缓存、未出现在频道列表中的修改记录<br>
@@ -371,6 +373,7 @@
             <button id="showLiveUrlBtn" onclick="showLiveUrl(`<?php echo strtok($Config['token'], ','); ?>`, `<?php echo $serverUrl; ?>`, `<?php echo $Config['token_range']; ?>`)">访问地址</button>
             <button id="showLiveTemplateBtn" onclick="showLiveTemplate()">直播源模板</button>
             <button id="showMoreLiveSettingBtn" onclick="showMoreLiveSetting(`<?php echo (isset($Config['live_source_auto_sync']) && $Config['live_source_auto_sync'] == 1 ? '同步更新: 是' : '同步更新: 否'); ?>`, 
+                                                        `<?php echo (isset($Config['check_speed_auto_sync']) && $Config['check_speed_auto_sync'] == 1 ? '同步测速: 是' : '同步测速: 否'); ?>`, 
                                                         `<?php echo (isset($Config['live_channel_name_process']) && $Config['live_channel_name_process'] == 1 ? '频道更名: 是' : '频道更名: 否'); ?>`)">更多设置</button>
             <button id="saveSourceBtn" onclick="saveLiveSourceInfo()">保存</button>
             <button id="saveSourceAsBtn" onclick="saveLiveSourceInfoAs()">另存为</button>

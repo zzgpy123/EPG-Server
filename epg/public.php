@@ -27,8 +27,8 @@ $Config = json_decode(file_get_contents($configPath), true) or die("配置文件
 // 获取 serverUrl
 $protocol = ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? (($_SERVER['HTTPS'] ?? '') === 'on' ? 'https' : 'http'));
 $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? '';
-$uri = rtrim(strtok(dirname($_SERVER['HTTP_X_ORIGINAL_URI'] ?? @$_SERVER['REQUEST_URI']) ?? '', '?'), '/');
-$serverUrl = $protocol . '://' . $host . $uri;
+$scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+$serverUrl = $protocol . '://' . $host . $scriptDir;
 
 // 建立 xmltv 软链接
 if ($Config['gen_xml'] && file_exists($xmlFilePath = __DIR__ . '/data/t.xml')
@@ -127,12 +127,13 @@ function t2s($channel) {
 }
 
 // 台标模糊匹配
-function iconUrlMatch($originalChannel, $getDefault = true) {
-    global $Config, $iconListMerged;
+function iconUrlMatch($originalChannel, $getDefault = true, $getFullUrl = true) {
+    global $Config, $iconListDefault, $iconListMerged, $serverUrl;
 
     // 精确匹配
     if (isset($iconListMerged[$originalChannel])) {
-        return $iconListMerged[$originalChannel];
+        $finalIconUrl = $iconListMerged[$originalChannel];
+        return $getFullUrl && stripos($finalIconUrl, '/data/icon/') === 0 ?  $serverUrl . $finalIconUrl : $finalIconUrl;
     }
 
     $bestMatch = null;
@@ -148,9 +149,9 @@ function iconUrlMatch($originalChannel, $getDefault = true) {
         }
     }
 
-    // 反向模糊匹配（列表中的频道名包含在原始频道名中）
+    // 反向模糊匹配（列表中的频道名包含在原始频道名中，仅默认列表）
     if (!$iconUrl) {
-        foreach ($iconListMerged as $channelName => $icon) {
+        foreach ($iconListDefault as $channelName => $icon) {
             if (stripos($originalChannel, $channelName) !== false) {
                 if ($bestMatch === null || strlen($channelName) > strlen($bestMatch)) {
                     $bestMatch = $channelName;
@@ -161,7 +162,8 @@ function iconUrlMatch($originalChannel, $getDefault = true) {
     }
 
     // 如果没有找到匹配的图标，使用默认图标（如果配置中存在）
-    return $iconUrl ?: ($getDefault && !empty($Config['default_icon']) ? $Config['default_icon'] : null);
+    $finalIconUrl = $iconUrl ?: ($getDefault ? ($Config['default_icon'] ?? null) : null);
+    return $getFullUrl && stripos($finalIconUrl, '/data/icon/') === 0 ?  $serverUrl . $finalIconUrl : $finalIconUrl;
 }
 
 // 下载文件
@@ -556,7 +558,7 @@ function doParseSourceInfo($urlLine = null) {
             $finalChannelName = $dbChannelName ?: $cleanChannelName;
             $row['channelName'] = $liveChannelNameProcess ? $finalChannelName : $row['channelName'];
             $row['chsChannelName'] = $chsChannelName;
-            $row['iconUrl'] = iconUrlMatch($finalChannelName) ?? $row['iconUrl'];
+            $row['iconUrl'] = iconUrlMatch($finalChannelName, true, false) ?? $row['iconUrl'];
             $row['tvgName'] = $dbChannelName ?? $row['tvgName'];
         }
 

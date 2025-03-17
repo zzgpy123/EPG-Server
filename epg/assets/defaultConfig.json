@@ -21,6 +21,7 @@
         "password": "phpepg"
     },
     "live_source_auto_sync": 0,
+    "check_speed_auto_sync": 0,
     "live_channel_name_process": 0,
     "live_tvg_logo_enable": 1,
     "live_tvg_id_enable": 1,

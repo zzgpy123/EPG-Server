@@ -669,10 +669,13 @@ function toggleStatus(toggleBtn) {
         .then(data => {
             // 更新按钮显示
             document.getElementById(toggleBtn).innerHTML = 
-                `${toggleBtn === "toggleLiveSourceSyncBtn" ? "同步更新" : "频道更名"}: ${data.status === 1 ? "是" : "否"}`;
+                `${toggleBtn === "toggleLiveSourceSyncBtn" ? "同步更新"
+                 : toggleBtn === "toggleCheckSpeedSyncBtn" ? "同步测速"
+                 : toggleBtn === "toggleLiveChannelNameProcessBtn" ? "频道更名" : "Error"}: ${data.status === 1 ? "是" : "否"}`;
             const syncStatus = document.getElementById("toggleLiveSourceSyncBtn").innerHTML;
+            const checkStatus = document.getElementById("toggleCheckSpeedSyncBtn").innerHTML;
             const processStatus = document.getElementById("toggleLiveChannelNameProcessBtn").innerHTML;
-            document.getElementById('showMoreLiveSettingBtn').setAttribute('onclick', `showMoreLiveSetting('${syncStatus}', '${processStatus}')`);
+            document.getElementById('showMoreLiveSettingBtn').setAttribute('onclick', `showMoreLiveSetting('${syncStatus}', '${checkStatus}', '${processStatus}')`);
         })
         .catch(error => console.error("Error:", error));
 }
@@ -701,14 +704,18 @@ function saveLiveSourceFile() {
 document.getElementById('sourceUrlTextarea').addEventListener('blur', saveLiveSourceFile);
 
 // 显示更多直播源设置
-function showMoreLiveSetting(sourceSync, nameProcess) {
+function showMoreLiveSetting(sourceSync, checkSync, nameProcess) {
     showMessageModal('');
     document.getElementById('messageModalMessage').innerHTML = `
-        <div class="button-container" style="width: 500px; margin-top: 30px;">
+        <div class="button-container" style="width: 380px; margin-top: 30px;">
             <button id="toggleLiveSourceSyncBtn" onclick="toggleStatus('toggleLiveSourceSyncBtn')">${sourceSync}</button>
+            <button id="toggleCheckSpeedSyncBtn" onclick="toggleStatus('toggleCheckSpeedSyncBtn')">${checkSync}</button>
             <button id="toggleLiveChannelNameProcessBtn" onclick="toggleStatus('toggleLiveChannelNameProcessBtn')">${nameProcess}</button>
+        </div>
+        <div class="button-container" style="margin-top: 20px;">
             <button id="checkSourceBtn" onclick="checkSource()">测速校验</button>
-            <button id="cleanUnusedSourceBtn" onclick="cleanUnusedSource()">清理</button>
+            <button id="cleanUnusedSourceBtn" onclick="cleanUnusedSource()">清理数据</button>
+            <button style="visibility: hidden;">占位</button>
         </div>
     `;
 }
@@ -796,15 +803,21 @@ function checkSource() {
         该过程可能需要一些时间，请耐心等待。<br><br>
         注意：结果不一定准确，且暂无法解析 IPv6 源。<br><br>
         </div>
-        <div class="button-container">
-            <button id="confirmCheckBtn" style="margin-bottom: -10px;">开始测速</button>
-            <button id="cleanCheckResultBtn" style="margin-bottom: -10px;">清除结果</button>
+        <div class="button-container" style="width: 380px; margin-bottom: -10px;">
+            <button id="foregroundCheckBtn">前台测速</button>
+            <button id="backgroundCheckBtn">后台测速</button>
+            <button id="cleanCheckResultBtn">清除结果</button>
         </div>
     `;
 
-    // 开始测速
-    document.getElementById('confirmCheckBtn').onclick = function () {
+    // 前台测速
+    document.getElementById('foregroundCheckBtn').onclick = function () {
         showExecResult('check.php', () => showModal('live', popup = false));
+    };
+
+    // 后台测速
+    document.getElementById('backgroundCheckBtn').onclick = function () {
+        showExecResult('check.php?backgroundMode=true', () => showModal('live', popup = false), fullSize = false);
     };
 
     // 清除结果
@@ -1013,7 +1026,6 @@ function handleIconFileUpload(event, item, row, allData) {
 
 // 转存所有台标到服务器
 function uploadAllIcons() {
-    const serverUrl = window.location.origin;
     const iconTable = document.getElementById('iconTable');
     const allIcons = JSON.parse(iconTable.dataset.allIcons);
     const rows = Array.from(document.querySelectorAll('#iconTable tbody tr'));
@@ -1024,7 +1036,7 @@ function uploadAllIcons() {
         const iconUrl = row.cells[1]?.innerText.trim();
         if (iconUrl) {
             totalIcons++;
-            if (!iconUrl.startsWith(serverUrl)) {
+            if (!iconUrl.startsWith('/data/icon/')) {
                 return true;
             } else {
                 uploadedIcons++;

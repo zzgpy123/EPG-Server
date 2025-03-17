@@ -1,6 +1,7 @@
 <?php
-// 检测是否为 AJAX 请求
-if (!(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')) {
+// 检测是否为 AJAX 请求或 CLI 运行
+if (!(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+    && php_sapi_name() !== 'cli') {
     http_response_code(403); // 返回403禁止访问
     exit('禁止直接访问');
 }
@@ -10,6 +11,14 @@ if (!shell_exec('which ffprobe')) {
     echo '<p>未检测到 ffmpeg 环境，请使用以下指令重新部署：
         <br>docker run -e ENABLE_FFMPEG=true -d --name php-epg -p 5678:80 --restart always taksss/php-epg:latest</p>';
     exit;
+}
+
+// 如果启用 backgroundMode，则在后台执行自身并退出
+if (isset($_GET['backgroundMode']) && $_GET['backgroundMode'] === 'true') {
+    exec("pgrep -f ffprobe", $output);
+    if (count($output) > 0) exit('已有任务在运行。');
+    exec("php check.php > /dev/null 2>&1 &");
+    exit('已切换至后台运行，关闭浏览器不影响执行。<br>请自行刷新页面查看结果。');
 }
 
 // 禁用 PHP 输出缓冲
@@ -71,6 +80,8 @@ if (isset($_GET['cleanMode']) && $_GET['cleanMode'] === 'true') {
     echo "测速数据已清除。";
     exit;
 }
+
+echo '<strong><span style="color: red;">前台测速过程中请勿关闭浏览器</span></strong><br><br>';
 
 // 读取 channels.csv 文件并解析
 if (!file_exists($channelsFile)) die('channels.csv 文件不存在');

@@ -135,7 +135,7 @@ function getChannelBindEPG() {
 }
 
 // 下载 XML 数据并存入数据库
-function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list) {
+function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list, $block_list = []) {
     global $Config;
     $xml_data = downloadData($xml_url, $userAgent);
     if ($xml_data !== false && stripos($xml_data, 'not found') === false) {
@@ -158,7 +158,7 @@ function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list) {
         if (isset($Config['all_chs']) && $Config['all_chs']) { $xml_data = t2s($xml_data); }
         $db->beginTransaction();
         try {
-            $processCount = processXmlData($xml_url, $xml_data, $db, $gen_list);
+            $processCount = processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list);
             $db->commit();
             logMessage($log_messages, "【更新】 成功：共 {$processCount} 条");
         } catch (Exception $e) {
@@ -172,7 +172,7 @@ function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list) {
 }
 
 // 处理 XML 数据并逐步存入数据库
-function processXmlData($xml_url, $xml_data, $db, $gen_list) {
+function processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list) {
     global $Config, $processedRecords, $channel_bind_epg, $thresholdDate;
 
     // 统计处理数据量
@@ -201,11 +201,11 @@ function processXmlData($xml_url, $xml_data, $db, $gen_list) {
     foreach ($cleanChannelNames as $channelId => $channelName) {
         $channelNameSimplified = array_shift($simplifiedChannelNames);
 
-        // 假如 channel_bind_epg 存在且频道在其中有记录，且不为当前 xml_url，直接跳过
-        if (!empty($channel_bind_epg) && 
+        // 假如 channel_bind_epg 存在且频道在其中有记录，且不为当前 xml_url，或频道在黑名单中，直接跳过
+        if ((!empty($channel_bind_epg) && 
             isset($channel_bind_epg[$channelNameSimplified]) && 
-            !in_array($xml_url, $channel_bind_epg[$channelNameSimplified])
-        ) {
+            !in_array($xml_url, $channel_bind_epg[$channelNameSimplified]))
+            || in_array($channelNameSimplified, $block_list)) {
             continue; // 跳过当前循环，继续处理下一个
         }
 
@@ -323,7 +323,7 @@ function processIconListAndXmltv($db, $gen_list_mapping, &$log_messages) {
 
     while ($program = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $channelName = $program['channel'];
-        $iconUrl = iconUrlMatch($channelName, $getDefault = false);
+        $iconUrl = iconUrlMatch($channelName, false, false);
 
         if ($iconUrl) {
             $iconList[strtoupper($channelName)] = $iconUrl;
@@ -515,11 +515,17 @@ foreach ($Config['xml_urls'] as $xml_url) {
     $cleaned_url = trim(strpos($xml_url_str, '=>') !== false ? explode('=>', $xml_url_str)[1] : $xml_url_str);
     logMessage($log_messages, "【地址】 $cleaned_url");
 
-    // 判断是否有限定频道列表并下载数据
+    // 判断是否有限定频道列表、屏蔽频道列表并下载数据
     if (strpos($xml_url_str, '=>') !== false) {
-        $tmp_gen_list = array_map('trim', explode(",", explode('=>', $xml_url_str)[0]));
-        logMessage($log_messages, "【临时】 限定频道：" . implode(", ", $tmp_gen_list));
-        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $tmp_gen_list, 1);
+        $block_list = $tmp_gen_list = [];
+        if (strpos($xml_url_str, '!') === 0) {
+            $block_list = array_map('trim', explode(",", explode('=>', str_replace('!', '', $xml_url_str))[0]));
+            logMessage($log_messages, "【临时】 屏蔽频道：" . implode(", ", $block_list));
+        } else {
+            $tmp_gen_list = array_map('trim', explode(",", explode('=>', $xml_url_str)[0]));
+            logMessage($log_messages, "【临时】 限定频道：" . implode(", ", $tmp_gen_list));
+        }
+        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $tmp_gen_list, $block_list);
     } else {
         downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $gen_list);
     }
@@ -536,6 +542,12 @@ if (isset($Config['live_source_auto_sync']) && $Config['live_source_auto_sync'] 
     } else {
         logMessage($log_messages, "【直播文件】 已同步更新");
     }
+}
+
+// 判断是否同步测速校验
+if (isset($Config['check_speed_auto_sync']) && $Config['check_speed_auto_sync'] == 1) {
+    exec('php check.php backgroundMode=1 > /dev/null 2>/dev/null &');
+    logMessage($log_messages, "【测速校验】 已在后台运行");
 }
 
 // 统计更新后数据条数
