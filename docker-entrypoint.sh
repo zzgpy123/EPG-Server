@@ -86,8 +86,8 @@ ln -s /usr/share/zoneinfo/${TZ} /etc/localtime
 
 echo 'Running cron.php and Apache'
 
-# Change ownership of /htdocs/
-chown -R apache:apache /htdocs/
+# Add write access to /htdocs
+chmod -R o+w /htdocs
 
 # Start cron.php
 cd /htdocs/

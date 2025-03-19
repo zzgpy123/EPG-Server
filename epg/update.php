@@ -135,7 +135,7 @@ function getChannelBindEPG() {
 }
 
 // 下载 XML 数据并存入数据库
-function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list, $block_list = []) {
+function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list, $white_list = [], $black_list = []) {
     global $Config;
     $xml_data = downloadData($xml_url, $userAgent);
     if ($xml_data !== false && stripos($xml_data, 'not found') === false) {
@@ -158,7 +158,7 @@ function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list, $
         if (isset($Config['all_chs']) && $Config['all_chs']) { $xml_data = t2s($xml_data); }
         $db->beginTransaction();
         try {
-            $processCount = processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list);
+            $processCount = processXmlData($xml_url, $xml_data, $db, $gen_list, $white_list, $black_list);
             $db->commit();
             logMessage($log_messages, "【更新】 成功：共 {$processCount} 条");
         } catch (Exception $e) {
@@ -172,7 +172,7 @@ function downloadXmlData($xml_url, $userAgent, $db, &$log_messages, $gen_list, $
 }
 
 // 处理 XML 数据并逐步存入数据库
-function processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list) {
+function processXmlData($xml_url, $xml_data, $db, $gen_list, $white_list, $black_list) {
     global $Config, $processedRecords, $channel_bind_epg, $thresholdDate;
 
     // 统计处理数据量
@@ -201,12 +201,12 @@ function processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list) {
     foreach ($cleanChannelNames as $channelId => $channelName) {
         $channelNameSimplified = array_shift($simplifiedChannelNames);
 
-        // 假如 channel_bind_epg 存在且频道在其中有记录，且不为当前 xml_url，或频道在黑名单中，直接跳过
-        if ((!empty($channel_bind_epg) && 
-            isset($channel_bind_epg[$channelNameSimplified]) && 
-            !in_array($xml_url, $channel_bind_epg[$channelNameSimplified]))
-            || in_array($channelNameSimplified, $block_list)) {
-            continue; // 跳过当前循环，继续处理下一个
+        // 频道指定来源且不为当前 xml_url、或不在白名单、或在黑名单中，直接跳过
+        if ((!empty($channel_bind_epg) && isset($channel_bind_epg[$channelNameSimplified]) && 
+            !in_array($xml_url, $channel_bind_epg[$channelNameSimplified])) || 
+            (!empty($white_list) && !in_array($channelNameSimplified, $white_list)) || 
+            in_array($channelNameSimplified, $black_list)) {
+            continue;
         }
 
         // 当 gen_list_enable 为 0 时，插入所有数据
@@ -214,16 +214,13 @@ function processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list) {
             $channelNamesMap[$channelId] = $channelNameSimplified;
             continue;
         }
-        $matchFound = false;
+        
         foreach ($gen_list as $item) {
             if (stripos($channelNameSimplified, $item) !== false || 
                 stripos($item, $channelNameSimplified) !== false) {
-                $matchFound = true;
+                $channelNamesMap[$channelId] = $channelNameSimplified;
                 break;
             }
-        }
-        if ($matchFound) {
-            $channelNamesMap[$channelId] = $channelNameSimplified;
         }
     }
 
@@ -290,9 +287,10 @@ function processXmlData($xml_url, $xml_data, $db, $gen_list, $block_list) {
                 insertDataToDatabase($currentChannelProgrammes, $db, $xml_url); // 插入前 49 条
                 $currentChannelProgrammes = [$channelId => $lastProgramme]; // 清空并重新赋值最后一条
             }
+            
+            $processCount++;
         }
     
-        $processCount++;
         $reader->next('programme');
     }
     
@@ -517,15 +515,15 @@ foreach ($Config['xml_urls'] as $xml_url) {
 
     // 判断是否有限定频道列表、屏蔽频道列表并下载数据
     if (strpos($xml_url_str, '=>') !== false) {
-        $block_list = $tmp_gen_list = [];
+        $black_list = $white_list = [];
         if (strpos($xml_url_str, '!') === 0) {
-            $block_list = array_map('trim', explode(",", explode('=>', str_replace('!', '', $xml_url_str))[0]));
-            logMessage($log_messages, "【临时】 屏蔽频道：" . implode(", ", $block_list));
+            $black_list = array_map('trim', explode(",", explode('=>', str_replace('!', '', $xml_url_str))[0]));
+            logMessage($log_messages, "【临时】 屏蔽频道：" . implode(", ", $black_list));
         } else {
-            $tmp_gen_list = array_map('trim', explode(",", explode('=>', $xml_url_str)[0]));
-            logMessage($log_messages, "【临时】 限定频道：" . implode(", ", $tmp_gen_list));
+            $white_list = array_map('trim', explode(",", explode('=>', $xml_url_str)[0]));
+            logMessage($log_messages, "【临时】 限定频道：" . implode(", ", $white_list));
         }
-        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $tmp_gen_list, $block_list);
+        downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $gen_list, $white_list, $black_list);
     } else {
         downloadXmlData($cleaned_url, $userAgent, $db, $log_messages, $gen_list);
     }

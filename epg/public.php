@@ -558,7 +558,7 @@ function doParseSourceInfo($urlLine = null) {
             $finalChannelName = $dbChannelName ?: $cleanChannelName;
             $row['channelName'] = $liveChannelNameProcess ? $finalChannelName : $row['channelName'];
             $row['chsChannelName'] = $chsChannelName;
-            $row['iconUrl'] = iconUrlMatch($finalChannelName, true, false) ?? $row['iconUrl'];
+            $row['iconUrl'] = iconUrlMatch($finalChannelName, true, false) ?: $row['iconUrl'];
             $row['tvgName'] = $dbChannelName ?? $row['tvgName'];
         }
 
