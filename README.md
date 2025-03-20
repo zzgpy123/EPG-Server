@@ -85,7 +85,7 @@ PHP 实现的 EPG（电子节目指南）服务端， `Docker` 部署，自带�
 
 1. 配置 `Docker` 环境
 
-2. 若已安装过，先删除旧版本并拉取新版本（**⚠️注意备份数据：`更多设置` -> `数据导出` / `数据导入`**）
+2. 若已安装过，先删除旧版本并拉取新版本
 
    ```bash
    docker rm php-epg -f && docker pull taksss/php-epg:latest
@@ -96,11 +96,14 @@ PHP 实现的 EPG（电子节目指南）服务端， `Docker` 部署，自带�
    ```bash
    docker run -d \
      --name php-epg \
+     -v /etc/epg:/htdocs/data \
      -p 5678:80 \
-     --restart always \
+     --restart unless-stopped \
      taksss/php-epg:latest
    ```
 
+    > 默认数据目录为 `/etc/epg` ，根据需要自行修改
+    > 
     > 默认端口为 `5678` ，根据需要自行修改（注意端口占用）
     > 
     > 可选参数：`-e PHP_MEMORY_LIMIT=512M` ，设置 PHP 内存限制，默认 `512M`
@@ -108,22 +111,6 @@ PHP 实现的 EPG（电子节目指南）服务端， `Docker` 部署，自带�
     > 可选参数：`-e ENABLE_FFMPEG=true` ，启用 ffmpeg 组件
     > 
     > 无法正常拉取镜像的，可使用同步更新的 `腾讯云容器镜像`（`ccr.ccs.tencentyun.com/taksss/php-epg:latest`）
-
-<details>
-
-<summary>（可选）数据持久化</summary>
-
-- 执行以下指令，`./data` 可根据自己需要更改
-    ```bash
-    docker run -d \
-      --name php-epg \
-      -v ./data:/htdocs/data \
-      -p 5678:80 \
-      --restart always \
-      taksss/php-epg:latest
-    ```
-
-</details>
 
 <details>
 
@@ -139,7 +126,7 @@ PHP 实现的 EPG（电子节目指南）服务端， `Docker` 部署，自带�
       -e MYSQL_DATABASE=phpepg \
       -e MYSQL_USER=phpepg \
       -e MYSQL_PASSWORD=phpepg \
-      --restart always \
+      --restart unless-stopped \
       mysql:8.0
     ```
     ```bash
@@ -149,15 +136,15 @@ PHP 实现的 EPG（电子节目指南）服务端， `Docker` 部署，自带�
       -e PMA_HOST=mysql \
       -e PMA_PORT=3306 \
       --link mysql:mysql \
-      --restart always \
+      --restart unless-stopped \
       phpmyadmin/phpmyadmin:latest
     ```
     ```bash
     docker run -d \
       --name php-epg \
-      -v ./data:/htdocs/data \
+      -v /etc/epg:/htdocs/data \
       -p 5678:80 \
-      --restart always \
+      --restart unless-stopped \
       --link mysql:mysql \
       --link phpmyadmin:phpmyadmin \
       taksss/php-epg:latest
